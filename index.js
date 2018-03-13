@@ -14,15 +14,15 @@ logger.level = 'info';
 
 class Spider {
 	constructor() {
-		this.header = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36'}
-
+		this.header = {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36'
+		}
 	}
 
 	curl(url) {
 		let reqConfig = {
 			url: url,
 			method: 'get',
-			header: this.header
 
 		};
 		return new Promise((resolve, reject) => {
@@ -119,7 +119,7 @@ class Spider {
 			for (let task of taskList) {
 				logger.info(`start batch download videos:${task.name} | ${task.src}`);
 			}
-			await this.batchDownload(taskList);
+			// await this.batchDownload(taskList);
 		}
 	}
 }
