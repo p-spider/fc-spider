@@ -41,7 +41,6 @@ class Spider {
 		let reqConfig = {
 			url: filePath,
 			method: 'get',
-			header: this.header
 		};
 		let stream = fs.createWriteStream('./video/' + fileName);
 		return new Promise((resolve, reject) => {
