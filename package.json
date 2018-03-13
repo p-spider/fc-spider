@@ -2,8 +2,7 @@
   "dependencies": {
     "bluebird": "^3.5.1",
     "cheerio": "^1.0.0-rc.2",
-    "log4js": "^2.5.3",
-    "puppeteer": "^1.1.1"
+    "log4js": "^2.5.3"
   },
   "name": "d8video",
   "description": "- 学习puppeteer无头浏览器的使用\r - 下载一些视频",
