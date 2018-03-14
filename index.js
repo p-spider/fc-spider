@@ -3,6 +3,7 @@
  */
 
 const fs = require('fs');
+const { URL } = require('url');
 const log4js = require('log4js');
 const cheerio = require('cheerio');
 const request = require('request');
@@ -15,20 +16,24 @@ logger.level = 'info';
 class Spider {
 	constructor() {
 		this.header = {
-			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.167 Safari/537.36'
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.167 Safari/537.36',
+			'referer': 'http://www.fcw42.com/'
 		}
 	}
 
-	curl(url) {
+	curl(_url) {
+		let url=new URL(_url);
+        url.pathname=encodeURIComponent(url.pathname);
 		let reqConfig = {
 			url: url,
 			method: 'get',
-
+			header:this.header
 		};
 		return new Promise((resolve, reject) => {
 			request(reqConfig, (err, res, body) => {
 				if (err) {
-					logger.error(`curl url err:${err}`);
+					console.dir(reqConfig)
+					logger.error(`curl url err on :${err}`);
 					reject(err);
 				}
 				resolve(body);
@@ -38,10 +43,13 @@ class Spider {
 
 
 	download(fileName, filePath) {
+        let url=new URL(filePath);
+        url.pathname=encodeURIComponent(url.pathname);
 		let reqConfig = {
-			url: filePath,
+			url: url,
 			method: 'get',
-		};
+            header:this.header
+        };
 		let stream = fs.createWriteStream('./video/' + fileName);
 		return new Promise((resolve, reject) => {
 			request(reqConfig)
@@ -85,9 +93,11 @@ class Spider {
 			let nameElement = $('.block-details .info .item em');
 			let srcElement = $('.block-details .info .item a[data-attach-session]');
 
-			let name = $(nameElement).text();
+			let name = ($(nameElement[3]).text())+'.mp4';
 			let src = $(srcElement).attr('href');
-
+			if(name==='.mp4'){
+			    name=$('title').text()+'.mp4';
+            }
 			return {name, src}
 		} catch (err) {
 			logger.error(err);
@@ -98,27 +108,31 @@ class Spider {
 
 	async run() {
 		for (let i = 1; i < 1000; i++) {
-			let url = `http://www.fcw42.com/most-popular/?mode=async&function=get_block&block_id=list_videos_common_videos_list&sort_by=video_viewed&_=${(new Date()).valueOf()}&from=${i}`;
-			let listPage = await this.curl(url);
-			let urlList = this.parseListPage(listPage);
+			try{
+                let url = `http://www.fcw42.com/most-popular/?mode=async&function=get_block&block_id=list_videos_common_videos_list&sort_by=video_viewed&_=${(new Date()).valueOf()}&from=${i}`;
+                let listPage = await this.curl(url);
+                let urlList = this.parseListPage(listPage);
 
-			logger.info(urlList)
+                // logger.info(urlList);
 
+                let taskList = [];
+                for (let _url of urlList) {
+                    let html = await this.curl(_url);
+                    let {name, src} = this.parseVideoPage(html);
+                    logger.info(`find video name:${name}`);
+                    if (src) {
+                        taskList.push({name, src});
+                    }
+                }
 
-			let taskList = [];
-			for (let _url of urlList) {
-				let html = await this.curl(_url);
-				let {name, src} = this.parseVideoPage(html);
-				logger.info(`find video name:${name}`);
-				if (src) {
-					taskList.push({name, src});
-				}
+                for (let task of taskList) {
+                    logger.info(`start batch download videos:${task.name} | ${task.src}`);
+                }
+                await this.batchDownload(taskList);
+			}catch (error){
+                logger.error(error);
+                continue;
 			}
-
-			for (let task of taskList) {
-				logger.info(`start batch download videos:${task.name} | ${task.src}`);
-			}
-			// await this.batchDownload(taskList);
 		}
 	}
 }
