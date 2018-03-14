@@ -107,6 +107,7 @@ class Spider {
 
 
 	async run() {
+        let taskList = [];
 		for (let i = 1; i < 1000; i++) {
 			try{
                 let url = `http://www.fcw42.com/most-popular/?mode=async&function=get_block&block_id=list_videos_common_videos_list&sort_by=video_viewed&_=${(new Date()).valueOf()}&from=${i}`;
@@ -115,7 +116,6 @@ class Spider {
 
                 // logger.info(urlList);
 
-                let taskList = [];
                 for (let _url of urlList) {
                     let html = await this.curl(_url);
                     let {name, src} = this.parseVideoPage(html);
@@ -128,13 +128,16 @@ class Spider {
                 for (let task of taskList) {
                     logger.info(`start batch download videos:${task.name} | ${task.src}`);
                 }
-                await this.batchDownload(taskList);
+                // await this.batchDownload(taskList);
+                await fs.writeFileSync('./taskList.json', JSON.stringify(taskList));
 			}catch (error){
                 logger.error(error);
                 continue;
 			}
 		}
-	}
+    }
+
+
 }
 
 let spider = new Spider();
